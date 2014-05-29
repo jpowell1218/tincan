@@ -1,0 +1,4 @@
+MethodLength:
+  Max: 20
+RescueException:
+  Enabled: false

@@ -18,18 +18,22 @@ Or install it yourself as:
 
 ## Usage
 
-Coming soon.
+``` ruby
+receiver = Tincans::Receiver.new do |config|
+  config.redis_host = 'localhost'
+  config.client_name = 'teamlab'
+  config.namespace = 'data'
+  config.channels = {
+    college: ['College.update_from_tincans'],
+    college_team: ['CollegeTeam.update_from_tincans']
+  }
+  config.on_exception = lambda do |ex, context|
+    Airbrake.notify_or_ignore(ex, parameters: context)
+  end
+end
 
-## Example configuration
-
-``` yaml
-channels:
-  college:
-    - College.update_from_tincans
-  college_team:
-    - CollegeTeam.update_from_tincans
-redis_host: localhost
-client_name: teamlab
+# This call blocks and loops
+receiver.listen
 ```
 
 ## Contributing
