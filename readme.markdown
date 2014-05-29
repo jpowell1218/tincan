@@ -20,6 +20,18 @@ Or install it yourself as:
 
 Coming soon.
 
+## Example configuration
+
+``` yaml
+channels:
+  college:
+    - College.update_from_tincans
+  college_team:
+    - CollegeTeam.update_from_tincans
+redis_host: localhost
+client_name: teamlab
+```
+
 ## Contributing
 
 1. Fork it ( https://github.com/captainu/tincans/fork )

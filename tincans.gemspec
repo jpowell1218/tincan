@@ -22,6 +22,13 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(/^(test|spec|features)\//)
   spec.require_paths = %w(lib)
 
+  spec.add_runtime_dependency 'json', '~> 1.8.1'
+  spec.add_runtime_dependency 'redis', '~> 3.0.7'
+
   spec.add_development_dependency 'bundler', '~> 1.6'
+  spec.add_development_dependency 'rspec', '~> 2.14.1'
+  spec.add_development_dependency 'rspec-nc', '~> 0.0.6'
+  spec.add_development_dependency 'pry', '~> 0.9.12'
+  spec.add_development_dependency 'pry-nav', '~> 0.2.3'
   spec.add_development_dependency 'rake'
 end
