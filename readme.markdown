@@ -1,6 +1,6 @@
 # Tincans
 
-Provides an easy way to register senders and receivers on a reliable Redis message queue.
+Provides an easy way to register senders and receivers on a reliable Redis message queue. More infomation coming soon.
 
 ## Installation
 
@@ -18,7 +18,7 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Coming soon.
 
 ## Contributing
 
