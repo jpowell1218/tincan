@@ -8,7 +8,7 @@ Provides an easy way to register senders and receivers on a reliable Redis messa
 
 Add this line to your application's Gemfile:
 
-    gem 'captainu-Tincan'
+    gem 'captainu-tincan'
 
 And then execute:
 
