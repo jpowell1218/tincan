@@ -2,7 +2,7 @@ require 'date'
 require 'json'
 
 module Tincan
-  # Encapsulates a message published to (and received from) a Redis pub/sub
+  # Encapsulates a message published to (and received from) a Redis "tincan"
   # queue.
   class Message
     attr_accessor :object_name, :change_type, :object_data, :published_at
