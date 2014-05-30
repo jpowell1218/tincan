@@ -1,8 +1,17 @@
 require 'spec_helper'
 
+# A test helper for handling messages.
+class Handler
+  attr_accessor :data
+end
+
 describe Tincan::Receiver do
+  let(:fixture) { IO.read('spec/fixtures/message.json').strip }
   let(:receiver) { Tincan::Receiver.new(options) }
   let(:redis) { ::Redis.new(host: options[:redis_host]) }
+  let(:handler_one_alpha) { Handler.new }
+  let(:handler_one_beta) { Handler.new }
+  let(:handler_two_alpha) { Handler.new }
   let(:options) do
     {
       redis_host: 'localhost',
@@ -10,12 +19,17 @@ describe Tincan::Receiver do
       client_name: 'bork',
       namespace: 'data',
       channels: {
-        channel_one: ['ClassName.method_thing'],
-        channel_two: ['OtherClass.another_method']
+        channel_one: [
+          -> (data) { handler_one_alpha.data = data },
+          -> (data) { handler_one_beta.data = data }
+          ],
+        channel_two: [-> (data) { handler_two_alpha.data = data }]
       },
-      on_exception: ->(ex, _context) { puts ex }
+      on_exception: ->(ex, _context) { puts "Exception: #{ex}" }
     }
   end
+
+  before { redis.flushdb }
 
   describe :lifecycle do
     it 'can be setup with a block' do
@@ -65,16 +79,50 @@ describe Tincan::Receiver do
         expect(failures).to include('55')
       end
 
-      it 'returns the message count' do
+      it 'returns the message count in the failures queue' do
+        result = receiver.store_failed_message('channel_one', '55')
+        expect(result).to eq(1)
+        result = receiver.store_failed_message('channel_one', '56')
+        expect(result).to eq(2)
+      end
+    end
+  end
 
+  describe :message_handling_methods do
+    describe :handle_message_for_object do
+      it 'iterates through the channel dict and calls lambdas' do
+        receiver.handle_message_for_object('channel_one', 'hello world')
+        receiver.handle_message_for_object('channel_two', 'goodbye world')
+
+        expect(handler_one_alpha.data).to eq('hello world')
+        expect(handler_one_beta.data).to eq('hello world')
+        expect(handler_two_alpha.data).to eq('goodbye world')
       end
     end
   end
 
   describe :loop_methods do
+    # These are very much "integration" tests as they test the main entry point
+    # and the conditions of the receiver from top to bottom.
     describe :listen do
-      it 'registers and subscribes and calls methods and DOES ALL THE THINGS'
-      # MOAR TESTS FOR THIS ONE
+      it 'registers, subscribes, calls methods, and DOES ALL THE THINGS' do
+        thread = Thread.new { receiver.listen }
+
+        get_consumers = -> { redis.smembers('data:channel_one:consumers') }
+        expect(get_consumers).to eventually_eq(%w(bork))
+
+        redis.set('data:channel_one:messages:1', fixture)
+        consumers = redis.smembers('data:channel_one:consumers')
+        consumers.each do |consumer|
+          redis.rpush("data:channel_one:#{consumer}:messages", '1')
+        end
+
+        message = Tincan::Message.from_json(fixture)
+        expect { handler_one_alpha.data }.to eventually_eq(message)
+        expect { handler_one_beta.data }.to eventually_eq(message)
+
+        thread.kill
+      end
     end
   end
 

@@ -50,6 +50,16 @@ module Tincan
       redis_client.rpush(error_list, message_id)
     end
 
+    # Message handling methods
+
+    # Iterates through stored lambdas for a given object, and passes the
+    # message to all of them.
+    def handle_message_for_object(object_name, message)
+      channels[object_name.to_sym].each do |stored_lambda|
+        stored_lambda.call(message)
+      end
+    end
+
     # Loop methods
 
     # Wraps this object's subscribe call with another block that forwards on
@@ -57,12 +67,7 @@ module Tincan
     def listen
       register
       subscribe do |object_name, message|
-        channels[object_name].each do |signature|
-          class_name, method_name = signature.split('.')
-          klass = ::Inflector.constantize(class_name)
-          method_to_call = method_name.to_sym
-          klass.send(method_to_call, message)
-        end
+        handle_message_for_object(object_name, message)
       end
     end
 
@@ -94,11 +99,11 @@ module Tincan
       loop do
         begin
           list, message_id = redis_client.blpop(channel_names)
-          object_name = list.split(':').first
+          object_name = list.split(':')[1]
           message = message_for_id(message_id, object_name)
           yield(object_name, message) if message && block_given?
         rescue Exception => e
-          on_exception.call(e) if on_exception
+          on_exception.call(e, {}) if on_exception
           store_failed_message(list, message_id)
         end
       end

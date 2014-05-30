@@ -23,6 +23,21 @@ module Tincan
       self.published_at ||= DateTime.now
     end
 
+    # Deserializes an object from a JSON string.
+    # @param [String] json A JSON string to be decoded.
+    # @return [Pusher::Notification] A deserialized notification.
+    def self.from_json(json)
+      instance = new do |i|
+        JSON.parse(json).each do |key, val|
+          if key == 'published_at'
+            val = DateTime.strptime(val, '%Y-%m-%d %H:%M:%S %z')
+          end
+          i.send("#{key}=".to_sym, val)
+        end
+      end
+      instance
+    end
+
     # Checks for proper change type and sets it if it's valid.
     # @param [Symbol] value :create, :modify, or :delete.
     def change_type=(value)
@@ -43,19 +58,14 @@ module Tincan
       end].to_json
     end
 
-    # Deserializes an object from a JSON string.
-    # @param [String] json A JSON string to be decoded.
-    # @return [Pusher::Notification] A deserialized notification.
-    def self.from_json(json)
-      instance = new do |i|
-        JSON.parse(json).each do |key, val|
-          if key == 'published_at'
-            val = DateTime.strptime(val, '%Y-%m-%d %H:%M:%S %z')
-          end
-          i.send("#{key}=".to_sym, val)
-        end
+    # Object overrides
+
+    # Overrides equality operator to determine if all ivars are equal
+    def ==(other)
+      checks = %i(object_name change_type object_data published_at).map do |p|
+        other.send(p) == send(p)
       end
-      instance
+      checks.all?
     end
   end
 end
