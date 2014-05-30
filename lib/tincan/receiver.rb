@@ -1,8 +1,8 @@
-require 'tincans/message'
+require 'tincan/message'
 require 'active_support/inflector'
 require 'redis'
 
-module Tincans
+module Tincan
   # An object whose purpose is to listen to a variety of Redis queues and fire
   # off notifications when triggered.
   class Receiver
@@ -30,15 +30,15 @@ module Tincans
 
     # The instance of a Redis communicator that can subscribe messages.
     def redis_client
-      @redis_client ||= ::Redis.new(host: redis_host)
+      @redis_client ||= ::Redis.new(host: redis_host, port: redis_port)
     end
 
     # Transactional methods
 
     # Registers this receiver against a Sidekiq queue. Returns self.
     def register
-      channel_names.each do |channel|
-        consumer_list_key = key_for_elements(namespace, channel, 'consumers')
+      channels.keys.each do |channel|
+        consumer_list_key = key_for_elements(channel, 'consumers')
         redis_client.sadd(consumer_list_key, client_name)
       end
       self
@@ -68,7 +68,7 @@ module Tincans
     # Formatting and helper methods
 
     # Asks the instance of Redis for the proper JSON data for a message, and
-    # then turns that into a Tincans::Message.
+    # then turns that into a Tincan::Message.
     def message_for_id(message_id, object_name)
       key = key_for_elements(object_name, 'messages', message_id)
       json = redis_client.get(key)

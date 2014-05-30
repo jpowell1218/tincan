@@ -1,7 +1,8 @@
-require 'tincans'
+require 'Tincan'
 require 'rspec'
 require 'pry'
 require 'vcr'
+require 'fakeredis/rspec'
 
 Dir[File.join(File.dirname(__FILE__), 'support', '**', '*.rb')].each do |file|
   require file

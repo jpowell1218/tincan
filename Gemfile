@@ -1,4 +1,4 @@
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in tincans.gemspec
+# Specify your gem's dependencies in Tincan.gemspec
 gemspec

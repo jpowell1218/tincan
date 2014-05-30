@@ -1,7 +1,7 @@
 require 'date'
 require 'json'
 
-module Tincans
+module Tincan
   # Encapsulates a message published to (and received from) a Redis pub/sub
   # queue.
   class Message
@@ -11,7 +11,7 @@ module Tincans
     # ActiveModel instance).
     # @param [Object] thing An object to encapsulate; usually an ActiveModel.
     # @param [Symbol] change_type :create, :modify, or :delete.
-    # @return [Tincans::Message] An instance of this class.
+    # @return [Tincan::Message] An instance of this class.
     def initialize(thing = nil, change_type = nil)
       if block_given?
         yield self

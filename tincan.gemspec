@@ -1,11 +1,11 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'tincans/version'
+require 'tincan/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = 'captainu-tincans'
-  spec.version       = Tincans::VERSION
+  spec.name          = 'captainu-tincan'
+  spec.version       = Tincan::VERSION
   spec.authors       = ['Ben Kreeger']
   spec.email         = %w(ben@captainu.com)
   spec.summary       = %q(A simple implementation of reliable Redis messaging.)
@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   message queue.
   DESC
 
-  spec.homepage      = 'https://github.com/captainu/tincans'
+  spec.homepage      = 'https://github.com/captainu/tincan'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0")
@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'bundler', '~> 1.6'
   spec.add_development_dependency 'rspec', '~> 2.14.1'
   spec.add_development_dependency 'rspec-nc', '~> 0.0.6'
+  spec.add_development_dependency 'fakeredis', '~> 0.4.3'
   spec.add_development_dependency 'pry', '~> 0.9.12'
   spec.add_development_dependency 'pry-nav', '~> 0.2.3'
   spec.add_development_dependency 'vcr', '~> 2.9.0'

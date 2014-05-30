@@ -2,3 +2,5 @@ MethodLength:
   Max: 20
 RescueException:
   Enabled: false
+NumericLiterals:
+  Enabled: false

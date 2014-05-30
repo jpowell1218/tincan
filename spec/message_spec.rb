@@ -7,23 +7,23 @@ class Dummy
   end
 end
 
-describe Tincans::Message do
-  let(:message) { Tincans::Message.new(Dummy.new, :create) }
+describe Tincan::Message do
+  let(:message) { Tincan::Message.new(Dummy.new, :create) }
   let(:fixture) { IO.read('spec/fixtures/message.json').strip }
 
   describe :initialize do
     it 'takes an object and a change type symbol' do
-      expect(message).to be_a(Tincans::Message)
+      expect(message).to be_a(Tincan::Message)
     end
 
     it 'fails with an invalid symbol type' do
-      process = -> { Tincans::Message.new(Dummy.new, :bork) }
+      process = -> { Tincan::Message.new(Dummy.new, :bork) }
       expect(process).to raise_error(ArgumentError)
     end
 
     it 'stores these as properties' do
       dummy = Dummy.new
-      msg = Tincans::Message.new(dummy, :create)
+      msg = Tincan::Message.new(dummy, :create)
       expect(msg.object_name).to eq('Dummy')
       expect(msg.change_type).to eq(:create)
       expect(msg.object_data).to eq(dummy)
@@ -44,9 +44,9 @@ describe Tincans::Message do
   end
 
   describe :from_json do
-    let(:from_json) { Tincans::Message.from_json(fixture) }
+    let(:from_json) { Tincan::Message.from_json(fixture) }
     it 'deserializes an object from a JSON string' do
-      expect(from_json).to be_a(Tincans::Message)
+      expect(from_json).to be_a(Tincan::Message)
     end
 
     it 'sets everything up properly' do
