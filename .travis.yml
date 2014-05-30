@@ -16,3 +16,7 @@ notifications:
       - ben@captainu.com
     on_failure: change
     on_success: never
+
+addons:
+  code_climate:
+    repo_token: cba73555a55853fa1641eb318bc937205ed57e318af6ce10dff3b224f8d01ef7

@@ -29,6 +29,6 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec', '~> 2.14.1'
   spec.add_development_dependency 'pry', '~> 0.9.12'
   spec.add_development_dependency 'pry-nav', '~> 0.2.3'
-  spec.add_development_dependency 'simplecov', '~> 0.7.1'
+  spec.add_development_dependency 'codeclimate-test-reporter', '~> 0.3.0'
   spec.add_development_dependency 'rake'
 end
