@@ -25,7 +25,7 @@ receiver = Tincan::Receiver.new do |config|
   config.redis_host = 'localhost'
   config.client_name = 'teamlab'
   config.namespace = 'data'
-  config.channels = {
+  config.listen_to = {
     college: [
       ->(data) { SomeThing.handle_data(data) },
       ->(data) { SomeOtherThing.handle_same_data(data) }

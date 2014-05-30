@@ -19,12 +19,12 @@ describe Tincan::Receiver do
       redis_port: 6379,
       client_name: 'bork',
       namespace: 'data',
-      channels: {
-        channel_one: [
+      listen_to: {
+        object_one: [
           -> (data) { handler_one_alpha.data = data },
           -> (data) { handler_one_beta.data = data }
           ],
-        channel_two: [-> (data) { handler_two_alpha.data = data }]
+        object_two: [-> (data) { handler_two_alpha.data = data }]
       },
       on_exception: (lambda do |ex, context|
         exception_handler.data = ex
@@ -65,10 +65,10 @@ describe Tincan::Receiver do
 
   describe :transactional_methods do
     describe :register do
-      it 'registers itself as a consumer for supplied channels' do
+      it 'registers itself as a receiver for supplied channels' do
         receiver.register
-        consumers = redis.smembers('data:channel_one:consumers')
-        expect(consumers).to include(receiver.client_name)
+        receivers = redis.smembers('data:object_one:receivers')
+        expect(receivers).to include(receiver.client_name)
       end
 
       it 'returns self' do
@@ -78,15 +78,15 @@ describe Tincan::Receiver do
 
     describe :store_failed_message do
       it 'stores a message ID in a specialized failures list' do
-        receiver.store_failed_message('channel_one', '55')
-        failures = redis.lrange('data:channel_one:failures', 0, -1)
+        receiver.store_failed_message('object_one', '55')
+        failures = redis.lrange('data:object_one:failures', 0, -1)
         expect(failures).to include('55')
       end
 
       it 'returns the message count in the failures queue' do
-        result = receiver.store_failed_message('channel_one', '55')
+        result = receiver.store_failed_message('object_one', '55')
         expect(result).to eq(1)
-        result = receiver.store_failed_message('channel_one', '56')
+        result = receiver.store_failed_message('object_one', '56')
         expect(result).to eq(2)
       end
     end
@@ -95,8 +95,8 @@ describe Tincan::Receiver do
   describe :message_handling_methods do
     describe :handle_message_for_object do
       it 'iterates through the channel dict and calls lambdas' do
-        receiver.handle_message_for_object('channel_one', 'hello world')
-        receiver.handle_message_for_object('channel_two', 'goodbye world')
+        receiver.handle_message_for_object('object_one', 'hello world')
+        receiver.handle_message_for_object('object_two', 'goodbye world')
 
         expect(handler_one_alpha.data).to eq('hello world')
         expect(handler_one_beta.data).to eq('hello world')
@@ -112,13 +112,13 @@ describe Tincan::Receiver do
       it 'registers, subscribes, calls methods, and DOES ALL THE THINGS' do
         thread = Thread.new { receiver.listen }
 
-        get_consumers = -> { redis.smembers('data:channel_one:consumers') }
-        expect(get_consumers).to eventually_equal(%w(bork))
+        get_receivers = -> { redis.smembers('data:object_one:receivers') }
+        expect(get_receivers).to eventually_equal(%w(bork))
 
-        redis.set('data:channel_one:messages:1', fixture)
-        consumers = redis.smembers('data:channel_one:consumers')
-        consumers.each do |consumer|
-          redis.rpush("data:channel_one:#{consumer}:messages", '1')
+        redis.set('data:object_one:messages:1', fixture)
+        receivers = redis.smembers('data:object_one:receivers')
+        receivers.each do |receiver|
+          redis.rpush("data:object_one:#{receiver}:messages", '1')
         end
 
         message = Tincan::Message.from_json(fixture)
@@ -132,14 +132,14 @@ describe Tincan::Receiver do
         pending 'Fails when part of an entire run, but not by itself.'
         thread = Thread.new { receiver.listen }
 
-        get_consumers = -> { redis.smembers('data:channel_one:consumers') }
-        expect(get_consumers).to eventually_equal(%w(bork))
+        get_receivers = -> { redis.smembers('data:object_one:receivers') }
+        expect(get_receivers).to eventually_equal(%w(bork))
 
         bad_data = { name: 'this data sucks' }.to_json
-        redis.set('data:channel_one:messages:2', bad_data)
-        consumers = redis.smembers('data:channel_one:consumers')
-        consumers.each do |consumer|
-          redis.rpush("data:channel_one:#{consumer}:messages", '2')
+        redis.set('data:object_one:messages:2', bad_data)
+        receivers = redis.smembers('data:object_one:receivers')
+        receivers.each do |receiver|
+          redis.rpush("data:object_one:#{receiver}:messages", '2')
         end
 
         expect { exception_handler.data }.to eventually_be_a(NoMethodError)
@@ -172,10 +172,10 @@ describe Tincan::Receiver do
       end
     end
 
-    describe :channel_names do
-      it 'converts the channels ivar into properly-formatted Redis keys' do
-        expected = %w(one two).map { |i| "data:channel_#{i}:bork:messages" }
-        expect(receiver.channel_names).to eq(expected)
+    describe :message_list_keys do
+      it 'converts the listen_to ivar into properly-formatted Redis keys' do
+        expected = %w(one two).map { |i| "data:object_#{i}:bork:messages" }
+        expect(receiver.message_list_keys).to eq(expected)
       end
     end
   end
