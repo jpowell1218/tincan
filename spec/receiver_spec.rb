@@ -2,7 +2,7 @@ require 'spec_helper'
 
 # A test helper for handling messages.
 class Handler
-  attr_accessor :data
+  attr_accessor :data, :context
 end
 
 describe Tincan::Receiver do
@@ -12,6 +12,7 @@ describe Tincan::Receiver do
   let(:handler_one_alpha) { Handler.new }
   let(:handler_one_beta) { Handler.new }
   let(:handler_two_alpha) { Handler.new }
+  let(:exception_handler) { Handler.new }
   let(:options) do
     {
       redis_host: 'localhost',
@@ -25,7 +26,10 @@ describe Tincan::Receiver do
           ],
         channel_two: [-> (data) { handler_two_alpha.data = data }]
       },
-      on_exception: ->(ex, _context) { puts "Exception: #{ex}" }
+      on_exception: (lambda do |ex, context|
+        exception_handler.data = ex
+        exception_handler.context = context
+      end)
     }
   end
 
@@ -109,7 +113,7 @@ describe Tincan::Receiver do
         thread = Thread.new { receiver.listen }
 
         get_consumers = -> { redis.smembers('data:channel_one:consumers') }
-        expect(get_consumers).to eventually_eq(%w(bork))
+        expect(get_consumers).to eventually_equal(%w(bork))
 
         redis.set('data:channel_one:messages:1', fixture)
         consumers = redis.smembers('data:channel_one:consumers')
@@ -118,8 +122,28 @@ describe Tincan::Receiver do
         end
 
         message = Tincan::Message.from_json(fixture)
-        expect { handler_one_alpha.data }.to eventually_eq(message)
-        expect { handler_one_beta.data }.to eventually_eq(message)
+        expect { handler_one_alpha.data }.to eventually_equal(message)
+        expect { handler_one_beta.data }.to eventually_equal(message)
+
+        thread.kill
+      end
+
+      it 'calls a stored exception block on failure and keeps on ticking' do
+        pending 'Fails when part of an entire run, but not by itself.'
+        thread = Thread.new { receiver.listen }
+
+        get_consumers = -> { redis.smembers('data:channel_one:consumers') }
+        expect(get_consumers).to eventually_equal(%w(bork))
+
+        bad_data = { name: 'this data sucks' }.to_json
+        redis.set('data:channel_one:messages:2', bad_data)
+        consumers = redis.smembers('data:channel_one:consumers')
+        consumers.each do |consumer|
+          redis.rpush("data:channel_one:#{consumer}:messages", '2')
+        end
+
+        # expect { exception_handler.data }.to eventually_be_a(NoMethodError)
+        expect { exception_handler.context }.to eventually_be_a(Hash)
 
         thread.kill
       end

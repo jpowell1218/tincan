@@ -62,6 +62,7 @@ module Tincan
 
     # Overrides equality operator to determine if all ivars are equal
     def ==(other)
+      false unless other
       checks = %i(object_name change_type object_data published_at).map do |p|
         other.send(p) == send(p)
       end
