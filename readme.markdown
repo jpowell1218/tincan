@@ -1,9 +1,8 @@
 # Tincan
 
-[![Build Status](https://travis-ci.org/captainu/tincan.svg?branch=master)](https://travis-ci.org/captainu/tincan) [![Code Climate](https://codeclimate.com/github/captainu/tincan.png)](https://codeclimate.com/github/captainu/tincan)
+[![Build Status](https://travis-ci.org/captainu/tincan.svg?branch=master)](https://travis-ci.org/captainu/tincan) [![Code Climate](https://codeclimate.com/github/captainu/tincan.png)](https://codeclimate.com/github/captainu/tincan) [![Code Climate](https://codeclimate.com/github/captainu/tincan/coverage.png)](https://codeclimate.com/github/captainu/tincan) 
 
 Provides an easy way to register senders and receivers on a reliable Redis message queue, to be used in lieu of Redis's own pub/sub commands (which are connection-reliant). This uses Redis's lists and sets using a defined and namespaced series of keys that allows for a *sender* to publish structured notification messages to a Redis server, which then get referenced in multiple receiver-specific lists, all of which are being watched by a client running a blocking pop (Redis's `BLPOP` command). These clients, known as *receivers*, handle the messages and route them to any number of custom-defined Ruby lambdas.
-
 This is a Ruby implementation of [David Marquis's outstanding post](http://davidmarquis.wordpress.com/2013/01/03/reliable-delivery-message-queues-with-redis/) about reliable delivery message queues with Redis.
 
 See below for some usage examples (more coming soon).
