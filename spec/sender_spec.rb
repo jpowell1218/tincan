@@ -58,10 +58,14 @@ describe Tincan::Sender do
     # These are very much "integration" tests as they test the main entry point
     # and the conditions of the sender from top to bottom.
     describe :publish do
+      let(:dummy) do
+        instance = Dummy.new
+        instance.name = 'Some Idiot'
+        instance
+      end
+
       before do
         redis.sadd('data:dummy:receivers', 'some_client')
-        dummy = Dummy.new
-        dummy.name = 'Some Idiot'
         sender.publish(dummy, :create)
         @timestamp = Time.now.to_i
       end
