@@ -46,7 +46,8 @@ module Tincan
 
     # Handles putting a message identifier into a failed "retries" list.
     def store_failed_message(list, message_id)
-      redis_client.rpush(list, message_id)
+      error_list = key_for_elements(list, 'failures')
+      redis_client.rpush(error_list, message_id)
     end
 
     # Loop methods
