@@ -7,6 +7,7 @@ module Tincan
   class Sender
     attr_reader :config
     attr_accessor :redis_host, :redis_port, :namespace
+
     # Lifecycle methods
 
     # Creates and return a sender object, ready to send. You can pass in
@@ -34,13 +35,15 @@ module Tincan
 
     # Transactional (lookup) methods
 
-    # Asks Redis for the set of all active listeners and generates string
-    # keys for all of them.
-    # @return [Array] An array of keys identifying all listener pointer lists.
-    def keys_for_listeners(object_name)
+    # Asks Redis for the set of all active receivers and generates string
+    # keys for all of them. Formatted like "namespace:object:client:messages".
+    # @return [Array] An array of keys identifying all receiver pointer lists.
+    def keys_for_receivers(object_name)
       receiver_list_key = key_for_elements(object_name, 'receivers')
-      listeners = redis.smembers(receiver_list_key)
-      listeners.map { |l| key_for_elements(l) }
+      receivers = redis_client.smembers(receiver_list_key)
+      receivers.map do |receiver|
+        key_for_elements(object_name, receiver, 'messages')
+      end
     end
 
     # Communication methods
@@ -53,8 +56,9 @@ module Tincan
     def publish(object, change_type)
       message = Message.new(object, change_type)
       identifier = identifier_for_message(message)
-      redis.set(primary_key_for_message(message), message.to_json)
-      keys_for_listeners.each { |key| redis.rpush(key, identifier) }
+      redis_client.set(primary_key_for_message(message), message.to_json)
+      keys_for_receivers.each { |key| redis_client.rpush(key, identifier) }
+      true
     end
 
     # Formatting and helper methods
@@ -64,7 +68,7 @@ module Tincan
     #                          unique identifier.
     # @return [Integer] A unique identifier number for the message.
     def identifier_for_message(message)
-      message.published_at.to_i
+      message.published_at.to_time.to_i
     end
 
     # Generates a key to be used as the primary destination key in Redis.
@@ -72,7 +76,7 @@ module Tincan
     # @return [String] A properly-formatted key to be used with Redis.
     def primary_key_for_message(message)
       identifier = identifier_for_message(message)
-      key_for_elements(message.object_name, 'messages', identifier)
+      key_for_elements(message.object_name.downcase, 'messages', identifier)
     end
 
     private

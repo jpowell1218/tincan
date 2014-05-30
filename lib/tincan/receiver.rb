@@ -43,7 +43,6 @@ module Tincan
     def register
       listen_to.keys.each do |object_name|
         receiver_list_key = key_for_elements(object_name, 'receivers')
-        puts receiver_list_key
         redis_client.sadd(receiver_list_key, client_name)
       end
       self
