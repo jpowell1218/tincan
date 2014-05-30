@@ -1,5 +1,7 @@
 # Tincans
 
+[![Build Status](https://travis-ci.org/captainu/tincans.svg?branch=master)](https://travis-ci.org/captainu/tincans)
+
 Provides an easy way to register senders and receivers on a reliable Redis message queue. More infomation coming soon.
 
 ## Installation
