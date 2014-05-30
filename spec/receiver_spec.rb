@@ -142,7 +142,7 @@ describe Tincan::Receiver do
           redis.rpush("data:channel_one:#{consumer}:messages", '2')
         end
 
-        # expect { exception_handler.data }.to eventually_be_a(NoMethodError)
+        expect { exception_handler.data }.to eventually_be_a(NoMethodError)
         expect { exception_handler.context }.to eventually_be_a(Hash)
 
         thread.kill
