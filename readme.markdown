@@ -19,6 +19,20 @@ And then execute:
 
 ## Usage
 
+### Sender
+
+``` ruby
+sender = Tincan::Sender.new do |config|
+  config.redis_host = 'localhost'
+  config.namespace = 'data'
+end
+
+# some_object here is something that responds to #to_json
+sender.publish(some_object, :create)
+```
+
+### Receiver
+
 ``` ruby
 receiver = Tincan::Receiver.new do |config|
   config.redis_host = 'localhost'
