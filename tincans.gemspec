@@ -31,5 +31,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec-nc', '~> 0.0.6'
   spec.add_development_dependency 'pry', '~> 0.9.12'
   spec.add_development_dependency 'pry-nav', '~> 0.2.3'
+  spec.add_development_dependency 'vcr', '~> 2.9.0'
+  spec.add_development_dependency 'webmock', '~> 1.17.1'
   spec.add_development_dependency 'rake'
 end

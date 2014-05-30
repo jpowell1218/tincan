@@ -1,10 +1,47 @@
 require 'spec_helper'
 
 describe Tincans::Receiver do
+  let(:options) do
+    {
+      redis_host: 'localhost',
+      client_name: 'bork',
+      namespace: 'data',
+      channels: {
+        channel_one: ['ClassName.method_thing'],
+        channel_two: ['OtherClass.another_method']
+      },
+      on_exception: ->(ex, _context) { puts ex }
+    }
+  end
+
   describe :lifecycle do
-    it 'can be setup with a block'
-    it 'can be setup with an options hash'
-    it 'memoizes a redis client'
+    it 'can be setup with a block' do
+      receiver = Tincans::Receiver.new do |config|
+        options.keys.each do |key|
+          config.send("#{key}=", options[key])
+        end
+      end
+
+      options.keys.each do |key|
+        expect(receiver.send(key)).to eq(options[key])
+      end
+    end
+
+    it 'can be setup with an options hash' do
+      receiver = Tincans::Receiver.new(options)
+
+      options.keys.each do |key|
+        expect(receiver.send(key)).to eq(options[key])
+      end
+    end
+  end
+
+  describe :related_objects do
+    it 'memoizes a redis client' do
+      receiver = Tincans::Receiver.new(options)
+      expect(receiver.redis_client).to be_a(Redis)
+      # expect(receiver.redis_client.host).to eq('redis://localhost:6379/0')
+    end
   end
 
   describe :transactional_methods do

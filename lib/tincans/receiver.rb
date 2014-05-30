@@ -1,5 +1,6 @@
 require 'tincans/message'
 require 'active_support/inflector'
+require 'redis'
 
 module Tincans
   # An object whose purpose is to listen to a variety of Redis queues and fire
@@ -18,16 +19,18 @@ module Tincans
         yield(self)
       else
         @config = options
-        %w(client_name channels redis_host redis_port namespace).each do |n|
-          send("@#{n}=", @config[n])
-        end
+        ivars =  %i(client_name channels redis_host redis_port namespace
+                    on_exception)
+        ivars.each { |n| send("#{n}=".to_sym, @config[n]) }
       end
       self.redis_port ||= 6379
     end
 
+    # Related objects
+
     # The instance of a Redis communicator that can subscribe messages.
     def redis_client
-      @redis_client ||= Redis.new(host: "redis://#{redis_host}:#{redis_port}")
+      @redis_client ||= ::Redis.new(host: redis_host)
     end
 
     # Transactional methods
@@ -55,7 +58,7 @@ module Tincans
       subscribe do |object_name, message|
         channels[object_name].each do |signature|
           class_name, method_name = signature.split('.')
-          klass = Inflector.constantize(class_name)
+          klass = ::Inflector.constantize(class_name)
           method_to_call = method_name.to_sym
           klass.send(method_to_call, message)
         end
@@ -70,7 +73,7 @@ module Tincans
       key = key_for_elements(object_name, 'messages', message_id)
       json = redis_client.get(key)
       return nil unless json
-      Tincans::Message.from_json(json)
+      Message.from_json(json)
     end
 
     # A flattened list of channel names, in the format of

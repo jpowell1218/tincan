@@ -1,3 +1,4 @@
+require 'date'
 require 'json'
 
 module Tincans
@@ -9,17 +10,27 @@ module Tincans
     # Creates a new instance of a notification with an object (usually an
     # ActiveModel instance).
     # @param [Object] thing An object to encapsulate; usually an ActiveModel.
-    # @param [Symbol] change_type :modify (for create/update) or :delete.
+    # @param [Symbol] change_type :create, :modify, or :delete.
     # @return [Tincans::Message] An instance of this class.
-    def initialize(thing, change_type)
-      unless %i(modify delete).include?(change_type)
-        fail ArgumentError, ':change_type must be :modify or :delete'
+    def initialize(thing = nil, change_type = nil)
+      if block_given?
+        yield self
+      else
+        self.object_name = thing.class.name
+        self.change_type = change_type
+        self.object_data = thing
       end
+      self.published_at ||= DateTime.now
+    end
 
-      self.object_name = thing.class.name
-      self.change_type = change_type
-      self.object_data = thing
-      self.published_at = Time.now
+    # Checks for proper change type and sets it if it's valid.
+    # @param [Symbol] value :create, :modify, or :delete.
+    def change_type=(value)
+      if %i(create modify delete).include?(value.to_sym)
+        @change_type = value.to_sym
+      else
+        fail ArgumentError, ':change_type must be :create, :modify or :delete'
+      end
     end
 
     # Generates a version of this notification as a JSON string.
@@ -36,8 +47,14 @@ module Tincans
     # @param [String] json A JSON string to be decoded.
     # @return [Pusher::Notification] A deserialized notification.
     def self.from_json(json)
-      instance = new
-      JSON.parse(json).each { |key, val| instance.send("#{key}=".to_sym, val) }
+      instance = new do |i|
+        JSON.parse(json).each do |key, val|
+          if key == 'published_at'
+            val = DateTime.strptime(val, '%Y-%m-%d %H:%M:%S %z')
+          end
+          i.send("#{key}=".to_sym, val)
+        end
+      end
       instance
     end
   end
