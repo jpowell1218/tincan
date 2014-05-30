@@ -78,8 +78,8 @@ describe Tincan::Receiver do
 
     describe :store_failed_message do
       it 'stores a message ID in a specialized failures list' do
-        receiver.store_failed_message('object_one', '55')
-        failures = redis.lrange('data:object_one:failures', 0, -1)
+        receiver.store_failed_message('data:object_one:client:messages', '55')
+        failures = redis.lrange('data:object_one:client:failures', 0, -1)
         expect(failures).to include('55')
       end
 
@@ -174,7 +174,12 @@ describe Tincan::Receiver do
 
     describe :message_list_keys do
       it 'converts the listen_to ivar into properly-formatted Redis keys' do
-        expected = %w(one two).map { |i| "data:object_#{i}:bork:messages" }
+        expected = %w(one two).map do |i|
+          [
+            "data:object_#{i}:bork:messages",
+            "data:object_#{i}:bork:failures"
+          ]
+        end.flatten
         expect(receiver.message_list_keys).to eq(expected)
       end
     end

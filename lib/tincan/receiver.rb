@@ -53,7 +53,9 @@ module Tincan
     # @param [Integer] message_id The identifier of the failed message.
     # @return [Integer] The number of failed entries in the same list.
     def store_failed_message(original_list, message_id)
-      error_list = key_for_elements(original_list, 'failures')
+      error_list = original_list.gsub('messages', 'failures')
+      # TODO: Reformat this as a "failure" object that has a timestamp
+      # detailing when this one can be retried again, a-la Sidekiq
       redis_client.rpush(error_list, message_id)
     end
 
@@ -72,13 +74,10 @@ module Tincan
 
     # Loop methods
 
-    # Wraps this object's subscribe call with another block that forwards on
-    # notifications to their proper methods.
+    # Registers and subscribes. That is all.
     def listen
       register
-      subscribe do |object_name, message|
-        handle_message_for_object(object_name, message)
-      end
+      subscribe
     end
 
     # Formatting and helper methods
@@ -103,8 +102,10 @@ module Tincan
     #                 "namespace:object_name:client:messages".
     def message_list_keys
       @message_list_keys ||= listen_to.keys.map do |object_name|
-        key_for_elements(object_name, client_name, 'messages')
-      end
+        %w(messages failures).map do |type|
+          key_for_elements(object_name, client_name, type)
+        end
+      end.flatten
     end
 
     private
@@ -119,7 +120,7 @@ module Tincan
           message_list, message_id = redis_client.blpop(message_list_keys)
           object_name = message_list.split(':')[1]
           message = message_for_id(message_id, object_name)
-          yield(object_name, message) if message && block_given?
+          handle_message_for_object(object_name, message) if message
         rescue Exception => e
           on_exception.call(e, {}) if on_exception
           store_failed_message(message_list, message_id)
