@@ -1,14 +1,13 @@
 require 'spec_helper'
 
-# For testing purposes.
-class Dummy
-  def to_json(_options)
-    '{"key":"value"}'
-  end
-end
-
 describe Tincan::Message do
-  let(:message) { Tincan::Message.new(Dummy.new, :create) }
+  let(:dummy) do
+    instance = Dummy.new
+    instance.name = 'Some Idiot'
+    instance
+  end
+
+  let(:message) { Tincan::Message.new(dummy, :create) }
   let(:fixture) { IO.read('spec/fixtures/message.json').strip }
 
   describe :initialize do
@@ -52,7 +51,7 @@ describe Tincan::Message do
     it 'sets everything up properly' do
       expect(from_json.object_name).to eq('Dummy')
       expect(from_json.change_type).to eq(:create)
-      expect(from_json.object_data).to eq('key' => 'value')
+      expect(from_json.object_data).to eq('name' => 'Some Idiot')
       expect(from_json.published_at).to be_a(DateTime)
     end
   end

@@ -45,8 +45,9 @@ describe Tincan::Sender do
 
   describe :transactional_methods do
     describe :keys_for_receivers do
+      before { redis.sadd('data:object:receivers', 'some_client') }
+
       it 'grabs receivers from Redis, maps them into message list keys' do
-        redis.sadd('data:object:receivers', 'some_client')
         result = sender.keys_for_receivers('object')
         expect(result).to eq(%w(data:object:some_client:messages))
       end
@@ -56,6 +57,28 @@ describe Tincan::Sender do
   describe :communication_methods do
     # These are very much "integration" tests as they test the main entry point
     # and the conditions of the sender from top to bottom.
+    describe :publish do
+      before do
+        redis.sadd('data:dummy:receivers', 'some_client')
+        dummy = Dummy.new
+        dummy.name = 'Some Idiot'
+        sender.publish(dummy, :create)
+        @timestamp = Time.now.to_i
+      end
+
+      it 'publishes a message to Redis at a specific key' do
+        message = redis.get("data:dummy:messages:#{@timestamp}")
+        expect(message).to be_a(String)
+        expected = '{"object_name":"Dummy","change_type":"create",'
+        expected += '"object_data":{"name":"Some Idiot"},"published_at":'
+        expect(message).to start_with(expected)
+      end
+
+      it 'also publishes a message ID to client-specific receiver lists' do
+        identifier = redis.lpop('data:dummy:some_client:messages')
+        expect(identifier).to eq(@timestamp.to_s)
+      end
+    end
   end
 
   describe :formatting_helper_methods do

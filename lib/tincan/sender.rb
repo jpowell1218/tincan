@@ -57,7 +57,9 @@ module Tincan
       message = Message.new(object, change_type)
       identifier = identifier_for_message(message)
       redis_client.set(primary_key_for_message(message), message.to_json)
-      keys_for_receivers.each { |key| redis_client.rpush(key, identifier) }
+      keys_for_receivers(message.object_name.downcase).each do |key|
+        redis_client.rpush(key, identifier)
+      end
       true
     end
 
