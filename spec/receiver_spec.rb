@@ -127,13 +127,13 @@ describe Tincan::Receiver do
   end
 
   describe :formatting_helper_methods do
-    let(:result) { receiver.message_for_id(1, 'bobsyouruncle') }
-    let(:message) { Tincan::Message.from_json(fixture) }
-    before do
-      redis.set('data:bobsyouruncle:messages:1', fixture)
-    end
-
     describe :message_for_id do
+      let(:result) { receiver.message_for_id(1, 'bobsyouruncle') }
+      let(:message) { Tincan::Message.from_json(fixture) }
+      before do
+        redis.set('data:bobsyouruncle:messages:1', fixture)
+      end
+
       it 'retrieves a message from Redis based on an ID and object' do
         expect(result).to eq(message)
       end
@@ -143,12 +143,16 @@ describe Tincan::Receiver do
       end
 
       it 'returns nil if the object was not found' do
-
+        redis.del('data:bobsyouruncle:messages:1')
+        expect(result).to be_nil
       end
     end
 
     describe :channel_names do
-      it 'converts the channels ivar into properly-formatted Redis keys'
+      it 'converts the channels ivar into properly-formatted Redis keys' do
+        expected = %w(one two).map { |i| "data:channel_#{i}:bork:messages" }
+        expect(receiver.channel_names).to eq(expected)
+      end
     end
   end
 end
