@@ -127,10 +127,24 @@ describe Tincan::Receiver do
   end
 
   describe :formatting_helper_methods do
+    let(:result) { receiver.message_for_id(1, 'bobsyouruncle') }
+    let(:message) { Tincan::Message.from_json(fixture) }
+    before do
+      redis.set('data:bobsyouruncle:messages:1', fixture)
+    end
+
     describe :message_for_id do
-      it 'retrieves a message from Redis based on an ID and object'
-      it 'is in the form of a Tincan::Message object'
-      it 'returns nil if the object was not found'
+      it 'retrieves a message from Redis based on an ID and object' do
+        expect(result).to eq(message)
+      end
+
+      it 'is in the form of a Tincan::Message object' do
+        expect(result).to be_a(Tincan::Message)
+      end
+
+      it 'returns nil if the object was not found' do
+
+      end
     end
 
     describe :channel_names do

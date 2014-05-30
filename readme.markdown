@@ -22,8 +22,13 @@ receiver = Tincan::Receiver.new do |config|
   config.client_name = 'teamlab'
   config.namespace = 'data'
   config.channels = {
-    college: ['College.update_from_tincan'],
-    college_team: ['CollegeTeam.update_from_tincan']
+    college: [
+      ->(data) { SomeThing.handle_data(data) },
+      ->(data) { SomeOtherThing.handle_same_data(data) }
+    ],
+    college_team: [
+      -> (data) { AnotherThing.handle_this_data(data) }
+    ]
   }
   config.on_exception = lambda do |ex, context|
     Airbrake.notify_or_ignore(ex, parameters: context)
