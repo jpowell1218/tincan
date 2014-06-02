@@ -1,1 +1,1 @@
-{"failed_at":"2014-06-02T09:30:47-05:00","attempt_count":1,"message":{"object_name":"Dummy","change_type":"create","object_data":{"name":"Some Idiot"},"published_at":"2014-06-02T09:30:47-05:00"}}
+{"failed_at":"2014-06-02T09:30:47-05:00","attempt_count":"1","message_id":"55"}

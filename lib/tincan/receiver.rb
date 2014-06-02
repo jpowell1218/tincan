@@ -1,3 +1,4 @@
+require 'tincan/failure'
 require 'tincan/message'
 require 'redis'
 
@@ -56,7 +57,8 @@ module Tincan
       error_list = original_list.gsub('messages', 'failures')
       # TODO: Reformat this as a "failure" object that has a timestamp
       # detailing when this one can be retried again, a-la Sidekiq
-      redis_client.rpush(error_list, message_id)
+      failure = Failure.new(message_id)
+      redis_client.rpush(error_list, failure.to_json)
     end
 
     # Message handling methods

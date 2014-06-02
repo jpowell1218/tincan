@@ -46,14 +46,7 @@ describe Tincan::Failure do
     end
 
     it 'sets everything up properly' do
-      expect(from_json.message.change_type).to eq(message.change_type)
-      expect(from_json.message.object_data).to eq(message.object_data)
-      expect(from_json.message.object_name).to eq(message.object_name)
-
-      published_at_s = JSON.parse(fixture)['message']['published_at']
-      published_at = DateTime.iso8601(published_at_s)
-      expect(from_json.message.published_at).to eq(published_at)
-
+      expect(from_json.message_id).to eq('55')
       expect(from_json.attempt_count).to eq(2)
       expect(from_json.failed_at).to be_a(DateTime)
     end
