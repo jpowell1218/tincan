@@ -37,7 +37,7 @@ describe Tincan::Message do
     end
 
     it 'includes the proper data' do
-      fixture.slice!('"2014-05-29 20:19:08 -0500"}')
+      fixture.slice!('"2014-06-02T09:43:36-05:00"}')
       expect(message.to_json).to start_with(fixture)
     end
   end

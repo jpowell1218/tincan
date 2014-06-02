@@ -88,13 +88,13 @@ describe Tincan::Sender do
   describe :formatting_helper_methods do
     describe :identifier_for_message do
       it 'generates a timestamp from the passed-in message' do
-        expect(sender.identifier_for_message(message)).to eq(1401412748)
+        expect(sender.identifier_for_message(message)).to eq(1401720216)
       end
     end
 
     describe :primary_key_for_message do
       it 'joins namespace, object name, and more to create a unique key' do
-        expected = 'data:dummy:messages:1401412748'
+        expected = 'data:dummy:messages:1401720216'
         expect(sender.primary_key_for_message(message)).to eq(expected)
       end
     end

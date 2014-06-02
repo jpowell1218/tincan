@@ -23,25 +23,32 @@ module Tincan
     # seconds.
     # @return [DateTime] The date/time when this is allowed to be retried.
     def attempt_after
-      failed_at + (attempt_count * 2)
+      failed_at + Rational((attempt_count * 10), 86400)
     end
 
     # Deserializes an object from a JSON string.
     # @param [String] json A JSON string to be decoded.
-    # @return [Pusher::Notification] A deserialized failure.
+    # @return [Tincan::Failure] A deserialized failure.
     def self.from_json(json)
-      hash = JSON.parse(json)
-      instance = new(Message.from_json(hash['message']))
+      from_hash(JSON.parse(json))
+    end
+
+    # Assigns keys and values to this object based on an already-deserialized
+    # JSON object.
+    # @param [Hash] hash A hash of properties and their values.
+    # @return [Tincan::Failure] A failure.
+    def self.from_hash(hash)
+      instance = new(Message.from_hash(hash['message']))
       instance.attempt_count = hash['attempt_count'].to_i + 1
       instance
     end
 
     # Generates a version of this failure as a JSON string.
     # @return [String] A JSON-compliant marshalling of this instance's data.
-    def to_json
+    def to_json(options = {})
       Hash[%i(failed_at attempt_count message).map do |name|
         [name, send(name)]
-      end].to_json
+      end].to_json(options)
     end
 
     # Object overrides
