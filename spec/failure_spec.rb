@@ -49,6 +49,7 @@ describe Tincan::Failure do
       expect(from_json.message_id).to eq('55')
       expect(from_json.attempt_count).to eq(2)
       expect(from_json.failed_at).to be_a(DateTime)
+      expect(from_json.queue_name).to eq('data:object_one:client:messages')
     end
   end
 end

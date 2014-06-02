@@ -57,7 +57,7 @@ module Tincan
       error_list = original_list.gsub('messages', 'failures')
       # TODO: Reformat this as a "failure" object that has a timestamp
       # detailing when this one can be retried again, a-la Sidekiq
-      failure = Failure.new(message_id)
+      failure = Failure.new(message_id, original_list)
       redis_client.rpush(error_list, failure.to_json)
     end
 

@@ -1,1 +1,1 @@
-{"failed_at":"2014-06-02T09:30:47-05:00","attempt_count":"1","message_id":"55"}
+{"failed_at":"2014-06-02T09:30:47-05:00","attempt_count":1,"message_id":"55","queue_name":"data:object_one:client:messages"}

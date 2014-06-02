@@ -80,7 +80,9 @@ describe Tincan::Receiver do
       it 'stores a message ID in a specialized failures list' do
         receiver.store_failed_message('data:object_one:client:messages', '55')
         failures = redis.lrange('data:object_one:client:failures', 0, -1)
-        expect(failures.first).to include('"attempt_count":1,"message_id":"55"')
+        expected = '"attempt_count":1,"message_id":"55","queue_name":'
+        expected << '"data:object_one:client:messages"}'
+        expect(failures.first).to include(expected)
       end
 
       it 'returns the message count in the failures queue' do
