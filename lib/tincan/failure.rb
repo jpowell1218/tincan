@@ -15,7 +15,7 @@ module Tincan
     # @return [Tincan::Message] An instance of this class.
     def initialize(message_id = nil, queue_name = nil)
       self.message_id = message_id
-      self.attempt_count = 1
+      self.attempt_count = 0
       self.failed_at = DateTime.now
       self.queue_name = queue_name
     end
@@ -41,7 +41,7 @@ module Tincan
     # @return [Tincan::Failure] A failure.
     def self.from_hash(hash)
       instance = new(hash['message_id'], hash['queue_name'])
-      instance.attempt_count = hash['attempt_count'].to_i + 1
+      instance.attempt_count = hash['attempt_count'].to_i
       instance
     end
 

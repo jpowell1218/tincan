@@ -142,7 +142,9 @@ module Tincan
           handle_message_for_object(object_name, message) if message
         rescue Exception => e
           on_exception.call(e, {}) if on_exception
-          store_failure(Failure.new(message_id, original_list))
+          failure ||= Failure.new(message_id, original_list)
+          failure.attempt_count += 1
+          store_failure(failure)
         end
       end
     end
