@@ -50,14 +50,19 @@ module Tincan
     end
 
     # Handles putting a message identifier into a failed "retries" list.
-    # @param [String] original_list The name of the originating list.
     # @param [Integer] message_id The identifier of the failed message.
+    # @param [String] original_list The name of the originating list.
     # @return [Integer] The number of failed entries in the same list.
-    def store_failed_message(original_list, message_id)
-      error_list = original_list.gsub('messages', 'failures')
-      # TODO: Reformat this as a "failure" object that has a timestamp
-      # detailing when this one can be retried again, a-la Sidekiq
+    def store_failed_message(message_id, original_list)
       failure = Failure.new(message_id, original_list)
+      store_failure(failure)
+    end
+
+    # Handles putting a message identifier into a failed "retries" list.
+    # @param [Tincan::Failure] failure The failure to store.
+    # @return [Integer] The number of failed entries in the same list.
+    def store_failure(failure)
+      error_list = failure.queue_name.gsub('messages', 'failures')
       redis_client.rpush(error_list, failure.to_json)
     end
 
@@ -119,13 +124,25 @@ module Tincan
     def subscribe
       loop do
         begin
-          message_list, message_id = redis_client.blpop(message_list_keys)
+          message_list, content = redis_client.blpop(message_list_keys)
           object_name = message_list.split(':')[1]
-          message = message_for_id(message_id, object_name)
+          message_type = message_list.split(':').last
+
+          if message_type == 'messages'
+            message = message_for_id(content, object_name)
+          elsif message_type == 'failures'
+            failure = Failure.from_json(content)
+            if failure.attempt_after > DateTime.now
+              store_failure(failure)
+              next
+            end
+            message = message_for_id(failure.message_id, object_name)
+          end
+
           handle_message_for_object(object_name, message) if message
         rescue Exception => e
           on_exception.call(e, {}) if on_exception
-          store_failed_message(message_list, message_id)
+          store_failure(Failure.new(message_id, original_list))
         end
       end
     end

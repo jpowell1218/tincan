@@ -76,9 +76,13 @@ describe Tincan::Receiver do
       end
     end
 
-    describe :store_failed_message do
+    describe :store_failure do
+      let(:failure) do
+        Tincan::Failure.new('55', 'data:object_one:client:messages')
+      end
+
       it 'stores a message ID in a specialized failures list' do
-        receiver.store_failed_message('data:object_one:client:messages', '55')
+        receiver.store_failure(failure)
         failures = redis.lrange('data:object_one:client:failures', 0, -1)
         expected = '"attempt_count":1,"message_id":"55","queue_name":'
         expected << '"data:object_one:client:messages"}'
@@ -86,10 +90,15 @@ describe Tincan::Receiver do
       end
 
       it 'returns the message count in the failures queue' do
-        result = receiver.store_failed_message('object_one', '55')
+        result = receiver.store_failure(failure)
         expect(result).to eq(1)
-        result = receiver.store_failed_message('object_one', '56')
+
+        result = receiver.store_failure(failure)
         expect(result).to eq(2)
+
+        failure.message_id = 100
+        result = receiver.store_failure(failure)
+        expect(result).to eq(3)
       end
     end
   end
