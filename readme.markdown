@@ -11,11 +11,15 @@ See below for some usage examples (more coming soon).
 
 Add this line to your application's Gemfile:
 
-    gem 'captainu-tincan', github: 'captainu/tincan', require: 'tincan'
+``` ruby
+gem 'captainu-tincan', github: 'captainu/tincan', require: 'tincan'
+```
 
 And then execute:
 
-    $ bundle install
+``` bash
+$ bundle install
+```
 
 ## Usage
 
