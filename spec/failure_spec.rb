@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Tincan::Failure do
   let(:dummy) do
-    instance = Dummy.new
+    instance = DummyClass.new
     instance.name = 'Some Idiot'
     instance
   end

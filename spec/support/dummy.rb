@@ -1,5 +1,5 @@
 # A dummy used for sending a message.
-class Dummy
+class DummyClass
   attr_accessor :name
 
   def to_json(options)

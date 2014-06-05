@@ -11,5 +11,5 @@ end
 
 RSpec.configure do |config|
   config.order = 'random'
-  config.include FuturisticMatchers
+  config.include Futuristic::Matchers
 end

@@ -140,8 +140,13 @@ module Tincan
           end
 
           handle_message_for_object(object_name, message) if message
+        rescue Interrupt
+          puts 'Receiver halted. Have a good day!'
+          exit
         rescue Exception => e
           on_exception.call(e, {}) if on_exception
+          puts "EXCEPTION #{e.class}: #{e}"
+          next unless message_id
           failure ||= Failure.new(message_id, original_list)
           failure.attempt_count += 1
           store_failure(failure)

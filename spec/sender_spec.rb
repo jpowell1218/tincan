@@ -59,27 +59,27 @@ describe Tincan::Sender do
     # and the conditions of the sender from top to bottom.
     describe :publish do
       let(:dummy) do
-        instance = Dummy.new
+        instance = DummyClass.new
         instance.name = 'Some Idiot'
         instance
       end
 
       before do
-        redis.sadd('data:dummy:receivers', 'some_client')
+        redis.sadd('data:dummy_class:receivers', 'some_client')
         sender.publish(dummy, :create)
         @timestamp = Time.now.to_i
       end
 
       it 'publishes a message to Redis at a specific key' do
-        message = redis.get("data:dummy:messages:#{@timestamp}")
+        message = redis.get("data:dummy_class:messages:#{@timestamp}")
         expect(message).to be_a(String)
-        expected = '{"object_name":"Dummy","change_type":"create",'
+        expected = '{"object_name":"dummy_class","change_type":"create",'
         expected += '"object_data":{"name":"Some Idiot"},"published_at":'
         expect(message).to start_with(expected)
       end
 
       it 'also publishes a message ID to client-specific receiver lists' do
-        identifier = redis.lpop('data:dummy:some_client:messages')
+        identifier = redis.lpop('data:dummy_class:some_client:messages')
         expect(identifier).to eq(@timestamp.to_s)
       end
     end
@@ -94,7 +94,7 @@ describe Tincan::Sender do
 
     describe :primary_key_for_message do
       it 'joins namespace, object name, and more to create a unique key' do
-        expected = 'data:dummy:messages:1401720216'
+        expected = 'data:dummy_class:messages:1401720216'
         expect(sender.primary_key_for_message(message)).to eq(expected)
       end
     end

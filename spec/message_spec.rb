@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Tincan::Message do
   let(:dummy) do
-    instance = Dummy.new
+    instance = DummyClass.new
     instance.name = 'Some Idiot'
     instance
   end
@@ -16,14 +16,14 @@ describe Tincan::Message do
     end
 
     it 'fails with an invalid symbol type' do
-      process = -> { Tincan::Message.new(Dummy.new, :bork) }
+      process = -> { Tincan::Message.new(DummyClass.new, :bork) }
       expect(process).to raise_error(ArgumentError)
     end
 
     it 'stores these as properties' do
-      dummy = Dummy.new
+      dummy = DummyClass.new
       msg = Tincan::Message.new(dummy, :create)
-      expect(msg.object_name).to eq('Dummy')
+      expect(msg.object_name).to eq('dummy_class')
       expect(msg.change_type).to eq(:create)
       expect(msg.object_data).to eq(dummy)
       expect(msg.published_at).to be_a(DateTime)
@@ -49,7 +49,7 @@ describe Tincan::Message do
     end
 
     it 'sets everything up properly' do
-      expect(from_json.object_name).to eq('Dummy')
+      expect(from_json.object_name).to eq('dummy_class')
       expect(from_json.change_type).to eq(:create)
       expect(from_json.object_data).to eq('name' => 'Some Idiot')
       expect(from_json.published_at).to be_a(DateTime)

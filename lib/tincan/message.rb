@@ -1,5 +1,6 @@
 require 'date'
 require 'json'
+require 'active_support/inflector'
 
 module Tincan
   # Encapsulates a message published to (and received from) a Redis "tincan"
@@ -16,7 +17,7 @@ module Tincan
       if block_given?
         yield self
       else
-        self.object_name = thing.class.name
+        self.object_name = thing.class.name.underscore
         self.change_type = change_type
         self.object_data = thing
       end
@@ -37,9 +38,7 @@ module Tincan
     def self.from_hash(hash)
       instance = new do |i|
         hash.each do |key, val|
-          if key == 'published_at'
-            val = DateTime.iso8601(val)
-          end
+          val = DateTime.iso8601(val) if key == 'published_at'
           i.send("#{key}=".to_sym, val)
         end
       end
