@@ -25,12 +25,20 @@ module Futuristic
     end
 
     class EventuallyEqual < Matcher
-      def initialize(expected)
+      attr_accessor :condition
+
+      def initialize(expected, condition = :equality)
         @expected = expected
+        @condition = condition
       end
 
       def matches?(block)
-        expected == evenual_result(&block)
+        case condition
+        when :equality
+          expected == evenual_result(&block)
+        when :class_equality
+          expected == evenual_result(&block).class
+        end
       end
 
       def failure_message
@@ -43,7 +51,11 @@ module Futuristic
     end
 
     def eventually_equal(target)
-      Futuristic::Matchers::EventuallyEqual.new(target)
+      Futuristic::Matchers::EventuallyEqual.new(target, :equality)
+    end
+
+    def eventually_be_a(target)
+      Futuristic::Matchers::EventuallyEqual.new(target, :class_equality)
     end
   end
 end
