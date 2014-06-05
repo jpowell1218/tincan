@@ -11,7 +11,7 @@ See below for some usage examples (more coming soon).
 
 Add this line to your application's Gemfile:
 
-    gem 'captainu-tincan'
+    gem 'captainu-tincan', github: 'captainu/tincan', require: 'tincan'
 
 And then execute:
 
@@ -24,7 +24,7 @@ And then execute:
 ``` ruby
 sender = Tincan::Sender.new do |config|
   config.redis_host = 'localhost'
-  config.namespace = 'data'
+  config.namespace = 'tincan' # Or whatever you'd like
 end
 
 # some_object here is something that responds to #to_json
@@ -36,8 +36,8 @@ sender.publish(some_object, :create)
 ``` ruby
 receiver = Tincan::Receiver.new do |config|
   config.redis_host = 'localhost'
-  config.client_name = 'teamlab'
-  config.namespace = 'data'
+  config.client_name = 'my-receiver'
+  config.namespace = 'tincan' # Same as above.
   config.listen_to = {
     college: [
       ->(data) { SomeThing.handle_data(data) },
