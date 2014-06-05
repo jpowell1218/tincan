@@ -146,8 +146,8 @@ module Tincan
         rescue Exception => e
           on_exception.call(e, {}) if on_exception
           puts "EXCEPTION #{e.class}: #{e}"
-          next unless message_id
-          failure ||= Failure.new(message_id, original_list)
+          next unless content
+          failure ||= Failure.new(content, original_list)
           failure.attempt_count += 1
           store_failure(failure)
         end
