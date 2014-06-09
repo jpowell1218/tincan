@@ -278,6 +278,7 @@ module Tincan
       if File.exist?('config/tincan.yml')
         opts[:config_file] ||= 'config/tincan.yml'
       end
+      opts[:logfile] = 'log/tincan.log' if opts[:daemon] && !opts[:logfile]
       opts
     end
 
@@ -287,8 +288,7 @@ module Tincan
     end
 
     def write_pid
-      path = config[:pidfile]
-      return unless path
+      path = config[:pidfile] || 'tmp/pids/tincan.pid'
       pidfile = File.expand_path(path)
       File.open(pidfile, 'w') { |f| f.puts ::Process.pid }
     end

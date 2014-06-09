@@ -19,6 +19,7 @@ describe Tincan::Receiver do
       redis_port: 6379,
       client_name: 'bork',
       namespace: 'data',
+      logger: ::Logger.new(STDOUT),
       listen_to: {
         object_one: [
           -> (data) { handler_one_alpha.data = data },
@@ -107,12 +108,14 @@ describe Tincan::Receiver do
   describe :message_handling_methods do
     describe :handle_message_for_object do
       it 'iterates through the channel dict and calls lambdas' do
-        receiver.handle_message_for_object('object_one', 'hello world')
-        receiver.handle_message_for_object('object_two', 'goodbye world')
+        msg = OpenStruct.new(object_data: 'hello world')
+        receiver.handle_message_for_object('object_one', msg)
+        msg2 = OpenStruct.new(object_data: 'goodbye world')
+        receiver.handle_message_for_object('object_two', msg2)
 
-        expect(handler_one_alpha.data).to eq('hello world')
-        expect(handler_one_beta.data).to eq('hello world')
-        expect(handler_two_alpha.data).to eq('goodbye world')
+        expect(handler_one_alpha.data).to eq(msg)
+        expect(handler_one_beta.data).to eq(msg)
+        expect(handler_two_alpha.data).to eq(msg2)
       end
     end
   end
@@ -140,7 +143,7 @@ describe Tincan::Receiver do
         thread.kill
       end
 
-      it 'calls a stored exception block on failure and keeps on ticking' do
+      xit 'calls a stored exception block on failure and keeps on ticking' do
         pending 'Fails when part of an entire run, but not by itself.'
         thread = Thread.new { receiver.listen }
 
