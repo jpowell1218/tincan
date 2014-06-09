@@ -8,7 +8,7 @@ module Tincan
   class Receiver
     attr_reader :config
     attr_accessor :client_name, :listen_to, :redis_host, :redis_port,
-                  :namespace, :on_exception
+                  :namespace, :on_exception, :logger
 
     # Lifecycle methods
 
@@ -22,7 +22,7 @@ module Tincan
       else
         @config = options
         ivars =  %i(client_name listen_to redis_host redis_port namespace
-                    on_exception)
+                    on_exception logger)
         ivars.each { |n| send("#{n}=".to_sym, @config[n]) }
       end
       self.redis_port ||= 6379
@@ -44,6 +44,7 @@ module Tincan
     def register
       listen_to.keys.each do |object_name|
         receiver_list_key = key_for_elements(object_name, 'receivers')
+        logger.info "Registered against Redis key #{receiver_list_key}"
         redis_client.sadd(receiver_list_key, client_name)
       end
       self
@@ -54,6 +55,7 @@ module Tincan
     # @param [String] original_list The name of the originating list.
     # @return [Integer] The number of failed entries in the same list.
     def store_failed_message(message_id, original_list)
+      logger.warn "Storing failure #{message_id} for list #{original_list}"
       failure = Failure.new(message_id, original_list)
       store_failure(failure)
     end
@@ -74,6 +76,7 @@ module Tincan
     # @param [Tincan::Message] message The Message generated from the JSON
     #                          hash retrieved from Redis.
     def handle_message_for_object(object_name, message)
+      logger.debug "Encountered message for #{object_name}: #{message}"
       listen_to[object_name.to_sym].each do |stored_lambda|
         stored_lambda.call(message)
       end
@@ -140,9 +143,6 @@ module Tincan
           end
 
           handle_message_for_object(object_name, message) if message
-        rescue Interrupt
-          puts 'Receiver halted. Have a good day!'
-          exit
         rescue Exception => e
           on_exception.call(e, {}) if on_exception
           next unless content

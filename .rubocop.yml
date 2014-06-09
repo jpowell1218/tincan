@@ -1,3 +1,5 @@
+AssignmentInCondition:
+  Enabled: false
 MethodLength:
   Max: 20
 RescueException:
