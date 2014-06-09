@@ -43,6 +43,7 @@ receiver = Tincan::Receiver.new do |config|
   config.redis_host = 'localhost'
   config.client_name = 'my-receiver'
   config.namespace = 'tincan' # Same as above.
+  config.logger = ::Logger.new(STDOUT)
   config.listen_to = {
     college: [
       ->(data) { SomeThing.handle_data(data) },
@@ -60,6 +61,45 @@ end
 # This call blocks and loops
 receiver.listen
 ```
+
+#### Rails integration for Receiver
+
+Drop a `tincan.yml` file in your Rails project at `config/tincan.yml`, and make it look like this!
+
+``` yaml
+defaults: &defaults
+  redis_host: localhost
+  listen_to:
+    college:
+      - SomeModel.update_from_tincan
+    college_team:
+      - SomeOtherModel.update_from_tincan
+
+development:
+  <<: *defaults
+  namespace: tincan-development
+  client_name: your_app-dev
+
+test:
+  <<: *defaults
+  namespace: tincan-test
+  client_name: your_app-test
+
+production:
+  <<: *defaults
+  namespace: tincan
+  client_name: your_app
+```
+
+Then, a command-line `tincan` worker is just a few keystrokes away.
+
+``` bash
+$ bundle exec tincan
+```
+
+You can even daemonize it with `-d`. The command-line library is largely modeled after [Sidekiq](https://github.com/mperham/sidekiq), and is currently in dire need of some tests. Use at your own risk.
+
+For integration with Capistrano, see [capistrano-tincan](https://github.com/captainu/capistrano-tincan).
 
 ## Contributing
 
