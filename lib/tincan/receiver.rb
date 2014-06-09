@@ -44,7 +44,7 @@ module Tincan
     def register
       listen_to.keys.each do |object_name|
         receiver_list_key = key_for_elements(object_name, 'receivers')
-        logger.info "Registered against Redis key #{receiver_list_key}"
+        logger.info "Registered against Tincan set #{receiver_list_key}"
         redis_client.sadd(receiver_list_key, client_name)
       end
       self
@@ -76,7 +76,7 @@ module Tincan
     # @param [Tincan::Message] message The Message generated from the JSON
     #                          hash retrieved from Redis.
     def handle_message_for_object(object_name, message)
-      logger.debug "Encountered message for #{object_name}: #{message}"
+      logger.debug "Encountered #{object_name} message: #{message.object_data}"
       listen_to[object_name.to_sym].each do |stored_lambda|
         stored_lambda.call(message)
       end
@@ -125,6 +125,7 @@ module Tincan
     # notification messages. Uses `BLPOP` as a blocking pop, indefinitely,
     # until we get a message.
     def subscribe
+      logger.info 'Awaiting new messages from Tincan.'
       loop do
         begin
           message_list, content = redis_client.blpop(message_list_keys)
@@ -143,7 +144,11 @@ module Tincan
           end
 
           handle_message_for_object(object_name, message) if message
+        rescue Interrupt
+          logger.warn 'Encountered interrupt.'
+          raise
         rescue Exception => e
+          logger.warn "Encountered exception #{e}."
           on_exception.call(e, {}) if on_exception
           next unless content
           failure ||= Failure.new(content, message_list)

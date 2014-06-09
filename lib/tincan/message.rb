@@ -75,5 +75,12 @@ module Tincan
       end
       checks.all?
     end
+
+    def to_s
+      vars = instance_variables.map do |v|
+        "#{v}=#{instance_variable_get(v).inspect}"
+      end.join(', ')
+      "<#{self.class}: #{vars}>"
+    end
   end
 end

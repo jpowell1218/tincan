@@ -6,6 +6,7 @@ require 'singleton'
 require 'optparse'
 require 'fileutils'
 require 'logger'
+require 'active_support/core_ext/hash/indifferent_access'
 
 require 'tincan/receiver'
 require 'tincan/version'
@@ -22,6 +23,7 @@ module Tincan
     attr_accessor :environment
     attr_accessor :logger
     attr_accessor :config
+    attr_accessor :thread
 
     def initialize
       @code = nil
@@ -30,8 +32,9 @@ module Tincan
     def parse(args = ARGV)
       @code = nil
 
-      setup_options(args)
+      setup_config(args)
       initialize_logger
+      check_required_keys!
       validate!
       daemonize
       write_pid
@@ -49,14 +52,14 @@ module Tincan
             self_write.puts(sig)
           end
         rescue ArgumentError
-          puts "Signal #{sig} not supported"
+          puts "Signal #{sig} not supported."
         end
       end
 
-      logger.info "Running in #{RUBY_DESCRIPTION}"
+      logger.info "Running in #{RUBY_DESCRIPTION}."
 
-      unless options[:daemon]
-        logger.info 'Starting processing, hit Ctrl-C to stop'
+      unless config[:daemon]
+        logger.info 'Now listening for notifications. Hit Ctrl-C to stop.'
       end
 
       ## TODO: FIX THIS
@@ -81,15 +84,15 @@ module Tincan
       end
 
       begin
-        receiver.listen
+        @thread = Thread.new { @receiver.listen }
 
         while readable_io = IO.select([self_read])
           signal = readable_io.first[0].gets.strip
           handle_signal(signal)
         end
       rescue Interrupt
-        logger.info 'Shutting down'
-        # launcher.stop
+        logger.info 'Shutting down.'
+        # @thread.stop
         exit(0)
       end
     end
@@ -105,38 +108,37 @@ module Tincan
     end
 
     def handle_signal(sig)
-      Tincan.logger.debug "Got #{sig} signal"
+      @logger.debug "Got #{sig} signal"
       case sig
       when 'INT'
         fail Interrupt
       when 'TERM'
         fail Interrupt
       when 'USR1'
-        Tincan.logger.info 'Received USR1, no longer accepting new work'
-        fail Interrupt
-        # receiver.stop
-      when 'USR2'
-        if Tincan.options[:logfile]
-          Tincan.logger.info 'Received USR2, reopening log file'
-          Tincan::Logging.reopen_logs
-        end
+        @logger.info 'Received USR1, no longer accepting new work'
+        @thread.stop
+      # when 'USR2'
+      #   if config[:logfile]
+      #     @logger.info 'Received USR2, reopening log file'
+      #     Tincan::Logging.reopen_logs
+      #   end
       when 'TTIN'
         Thread.list.each do |thread|
           label = thread['label']
-          Tincan.logger.info "Thread TID-#{thread.object_id.to_s(36)} #{label}"
+          @logger.info "Thread TID-#{thread.object_id.to_s(36)} #{label}"
           if thread.backtrace
-            Tincan.logger.info thread.backtrace.join("\n")
+            @logger.info thread.backtrace.join("\n")
           else
-            Tincan.logger.info '<no backtrace available>'
+            @logger.info '<no backtrace available>'
           end
         end
       end
     end
 
     def daemonize
-      return unless options[:daemon]
+      return unless config[:daemon]
 
-      unless options[:logfile]
+      unless config[:logfile]
         fail ArgumentError,
              "You really should set a logfile if you're going to daemonize"
       end
@@ -156,7 +158,7 @@ module Tincan
       end
 
       [$stdout, $stderr].each do |io|
-        File.open(options[:logfile], 'ab') do |f|
+        File.open(config[:logfile], 'ab') do |f|
           io.reopen(f)
         end
         io.sync = true
@@ -170,7 +172,7 @@ module Tincan
       @environment = cli_env || ENV['RAILS_ENV'] || ENV['RACK_ENV'] || 'development'
     end
 
-    def setup_options(args)
+    def setup_config(args)
       opts = parse_options(args)
       set_environment opts[:environment]
       opts = parse_config(opts[:config_file]).merge(opts) if opts[:config_file]
@@ -181,17 +183,17 @@ module Tincan
     def boot_system
       ENV['RACK_ENV'] = ENV['RAILS_ENV'] = environment
 
-      unless File.exist?(options[:require])
-        fail ArgumentError, "#{options[:require]} does not exist"
+      unless File.exist?(config[:require])
+        fail ArgumentError, "#{config[:require]} does not exist"
       end
 
-      if File.directory?(options[:require])
+      if File.directory?(config[:require])
         require 'rails'
-        require File.expand_path("#{options[:require]}/config/environment.rb")
+        require File.expand_path("#{config[:require]}/config/environment.rb")
         ::Rails.application.eager_load!
-        options[:tag] = default_tag
+        config[:tag] = default_tag
       else
-        require options[:require]
+        require config[:require]
       end
     end
 
@@ -207,17 +209,24 @@ module Tincan
       name
     end
 
+    def check_required_keys!
+      required_keys = [:redis_host, :client_name, :namespace, :listen_to]
+      return if required_keys.all? { |k| config[k] }
+      logger.info '======================================================================'
+      logger.info '  Tincan needs :redis_host, :client_name, :namespace, and :listen_to'
+      logger.info '  defined in config/tincan.yml.'
+      logger.info '======================================================================'
+      exit 1
+    end
+
     def validate!
-      unless File.exist?(options[:require]) ||
-             (File.directory?(options[:require]) &&
-              !File.exist?("#{options[:require]}/config/application.rb"))
-        return
-      end
+      return if File.exist?(config[:require])
+      return if File.directory?(config[:require]) &&
+                File.exist?("#{config[:require]}/config/application.rb")
       logger.info '=================================================='
       logger.info '  Please point tincan to a Rails 3/4 application'
       logger.info '  to load your receiver with -r [DIR|FILE].'
       logger.info '=================================================='
-      logger.info @parser
       exit 1
     end
 
@@ -265,6 +274,7 @@ module Tincan
         exit 1
       end
       @parser.parse!(argv)
+      opts[:require] ||= '.'
       if File.exist?('config/tincan.yml')
         opts[:config_file] ||= 'config/tincan.yml'
       end
@@ -272,12 +282,12 @@ module Tincan
     end
 
     def initialize_logger
-      @logger = ::Logger.new(options[:logfile])
-      @logger.level = ::Logger::DEBUG if options[:verbose]
+      @logger = ::Logger.new(config[:logfile] || STDOUT)
+      @logger.level = ::Logger::DEBUG if config[:verbose]
     end
 
     def write_pid
-      path = options[:pidfile]
+      path = config[:pidfile]
       return unless path
       pidfile = File.expand_path(path)
       File.open(pidfile, 'w') { |f| f.puts ::Process.pid }
